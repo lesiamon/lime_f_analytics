@@ -98,24 +98,37 @@ def get_deepseek_feedback(predicted_class):
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
-    # Read image once
-    image_data = await file.read()
-    image = read_file_as_image(image_data)
+    try:
+        # Read image once
+        image_data = await file.read()
+        print(f"Received file: {file.filename}, size: {len(image_data)} bytes")
+        
+        image = read_file_as_image(image_data)
 
-    # Model prediction
-    img_batch = np.expand_dims(image, 0)
-    predictions = MODEL.predict(img_batch)
-    predicted_class = CLASS_NAMES[np.argmax(predictions[0])]
-    confidence = float(np.max(predictions[0]))
+        # Model prediction
+        img_batch = np.expand_dims(image, 0)
+        predictions = MODEL.predict(img_batch)
+        predicted_class = CLASS_NAMES[np.argmax(predictions[0])]
+        confidence = float(np.max(predictions[0]))
+        
+        print(f"Prediction: {predicted_class}, Confidence: {confidence:.2f}")
 
-    # Get DeepSeek feedback
-    deepseek_feedback = get_deepseek_feedback(predicted_class)
+        # Get DeepSeek feedback
+        deepseek_feedback = get_deepseek_feedback(predicted_class)
 
-    return {
-        'class': predicted_class,
-        'confidence': confidence,
-        'ai_feedback': deepseek_feedback
-    }
+        return {
+            'class': predicted_class,
+            'confidence': confidence,
+            'ai_feedback': deepseek_feedback
+        }
+    except Exception as e:
+        print(f"Error in predict endpoint: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e)}, 500
 
 if __name__ == "__main__":
-    uvicorn.run(app, host='localhost', port=8000)
+    print("Starting FastAPI server on http://localhost:8000")
+    print("Test endpoint: http://localhost:8000/ping")
+    print("Predict endpoint: http://localhost:8000/predict")
+    uvicorn.run(app, host='0.0.0.0', port=8000)  # Changed to 0.0.0.0 for better accessibility

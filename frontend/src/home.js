@@ -229,12 +229,34 @@ export const ImageUpload = () => {
     formData.append("file", file);
 
     try {
-      let response = await axios.post(process.env.REACT_APP_API_URL, formData);
+      console.log("Uploading file to:", process.env.REACT_APP_API_URL || "http://localhost:8000/predict");
+      
+      let response = await axios.post(
+        process.env.REACT_APP_API_URL || "http://localhost:8000/predict",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          timeout: 30000, // 30 second timeout
+        }
+      );
+      
+      console.log("Upload successful:", response.data);
       if (response.status === 200) {
         setData(response.data);
       }
     } catch (error) {
-      console.error("File upload failed:", error);
+      console.error("File upload failed:", error.response?.status, error.message);
+      if (error.response) {
+        console.error("Error details:", error.response.data);
+      } else if (error.request) {
+        console.error("No response from server. Is the backend running on http://localhost:8000?");
+      } else {
+        console.error("Error details:", error.message);
+      }
+      // Optionally show user-friendly error message
+      alert(`Upload failed: ${error.message}. Check console for details.`);
     }
     setIsLoading(false);
   };
@@ -252,7 +274,7 @@ export const ImageUpload = () => {
       <AppBar position="static" className={classes.appBar}>
         <Toolbar>
           <Typography variant="h5" className={classes.title}>
-            🌱 Lime Farms Analytics
+            🌱 SILSEM Agro Analytics
           </Typography>
           <IconButton color="inherit">
             <Info style={{ fontSize: 28 }} />
